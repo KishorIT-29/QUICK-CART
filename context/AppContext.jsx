@@ -19,8 +19,23 @@ export const AppContextProvider = (props) => {
     const [isSeller, setIsSeller] = useState(true)
     const [cartItems, setCartItems] = useState({})
 
+    const USD_TO_INR = 83; // keep configurable
+
+    const formatINR = (amount) => {
+        if (amount == null) return "₹0.00";
+        return Number(amount).toLocaleString("en-IN", {
+            style: "currency",
+            currency: "INR"
+        });
+    }
+
     const fetchProductData = async () => {
-        setProducts(productsDummyData)
+        const productsWithINR = productsDummyData.map(product => ({
+            ...product,
+            priceINR: Math.round(product.price * USD_TO_INR),
+            offerPriceINR: Math.round(product.offerPrice * USD_TO_INR)
+        }));
+        setProducts(productsWithINR)
     }
 
     const fetchUserData = async () => {
@@ -66,8 +81,19 @@ export const AppContextProvider = (props) => {
         let totalAmount = 0;
         for (const items in cartItems) {
             let itemInfo = products.find((product) => product._id === items);
-            if (cartItems[items] > 0) {
+            if (itemInfo && cartItems[items] > 0) {
                 totalAmount += itemInfo.offerPrice * cartItems[items];
+            }
+        }
+        return Math.floor(totalAmount * 100) / 100;
+    }
+
+    const getCartAmountINR = () => {
+        let totalAmount = 0;
+        for (const items in cartItems) {
+            let itemInfo = products.find((product) => product._id === items);
+            if (itemInfo && cartItems[items] > 0) {
+                totalAmount += itemInfo.offerPriceINR * cartItems[items];
             }
         }
         return Math.floor(totalAmount * 100) / 100;
@@ -88,12 +114,13 @@ export const AppContextProvider = (props) => {
         products, fetchProductData,
         cartItems, setCartItems,
         addToCart, updateCartQuantity,
-        getCartCount, getCartAmount
+        getCartCount, getCartAmount,
+        formatINR, getCartAmountINR, USD_TO_INR
     }
 
     return (
-        <AppContext.Provider value={value}>
+        <AppContext.Provider value={value} >
             {props.children}
-        </AppContext.Provider>
+        </AppContext.Provider >
     )
 }
